@@ -13,7 +13,12 @@ router.get('/', async (req, res) => {
   try {
     const db = getDB();
     const paymentMethods = await db.collection('paymentMethods')
-      .find({ userId: req.user._id.toString() })
+      .find({
+        $or: [
+          { userId: req.user._id.toString() },
+          { isDefault: true }
+        ]
+      })
       .sort({ name: 1 })
       .toArray();
 

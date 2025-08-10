@@ -14,7 +14,12 @@ const connectDB = async () => {
     });
 
     await client.connect();
-    db = client.db('expenses-tracker');
+    // Prefer the database from the connection string; fallback to explicit name matching env example
+    // If URI includes a DB name (mongodb://host:port/dbname), MongoClient.db() without args uses that
+    db = client.db();
+    if (!db.databaseName || db.databaseName === 'test') {
+      db = client.db('expense-tracker');
+    }
 
     console.log('✅ MongoDB connected successfully');
 
@@ -53,6 +58,11 @@ const createIndexes = async () => {
     // Payment methods collection indexes
     await db.collection('paymentMethods').createIndex({ userId: 1 });
     await db.collection('paymentMethods').createIndex({ isDefault: 1 });
+
+    // Budgets collection indexes
+    await db.collection('budgets').createIndex({ userId: 1 });
+    await db.collection('budgets').createIndex({ isActive: 1 });
+    await db.collection('budgets').createIndex({ startDate: 1, endDate: 1 });
 
     // Groups collection indexes
     await db.collection('groups').createIndex({ 'members.userId': 1 });

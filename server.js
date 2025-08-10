@@ -13,11 +13,12 @@ const userRoutes = require('./routes/users');
 const sharedExpenseRoutes = require('./routes/shared-expenses');
 const categoryRoutes = require('./routes/categories');
 const paymentMethodRoutes = require('./routes/payment-methods');
+const budgetRoutes = require('./routes/budgets');
 const uploadRoutes = require('./routes/uploads');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5500;
 
 // Connect to MongoDB
 connectDB();
@@ -74,6 +75,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/shared-expenses', sharedExpenseRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/payment-methods', paymentMethodRoutes);
+app.use('/api/budgets', budgetRoutes);
 app.use('/api/uploads', uploadRoutes);
 
 // 404 handler

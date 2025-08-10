@@ -58,7 +58,8 @@ router.post('/receipt', authenticateToken, upload.single('image'), async (req, r
       .webp({ quality: 80 })
       .toFile(filepath);
 
-    const imageUrl = `/uploads/${filename}`;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const imageUrl = `${baseUrl}/uploads/${filename}`;
 
     res.json({
       success: true,
@@ -98,7 +99,8 @@ router.post('/profile-picture', authenticateToken, upload.single('image'), async
       .webp({ quality: 90 })
       .toFile(filepath);
 
-    const imageUrl = `/uploads/${filename}`;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const imageUrl = `${baseUrl}/uploads/${filename}`;
 
     res.json({
       success: true,

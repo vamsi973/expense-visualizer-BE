@@ -69,6 +69,78 @@ router.get('/', async (req, res) => {
 });
 
 // Get expense by ID
+// Important: define specific routes BEFORE parameterized ':id' route to avoid shadowing
+router.get('/month/:year/:month', async (req, res) => {
+  try {
+    const db = getDB();
+    const { year, month } = req.params;
+
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+    console.log("startData",startDate);
+    console.log("endDate",endDate);
+    const expenses = await db.collection('expenses')
+      .find({
+        userId: req.user._id.toString(),
+        date: { $gte: startDate, $lte: endDate }
+      })
+      .sort({ date: -1 })
+      .toArray();
+
+    res.json({
+      success: true,
+      data: { expenses }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Get expense statistics
+router.get('/stats/summary', async (req, res) => {
+  try {
+    const db = getDB();
+    const { startDate, endDate } = req.query;
+
+    const filter = { userId: req.user._id.toString() };
+    if (startDate) filter.date = { $gte: new Date(startDate) };
+    if (endDate) {
+      filter.date = filter.date || {};
+      filter.date.$lte = new Date(endDate);
+    }
+
+    const pipeline = [
+      { $match: filter },
+      {
+        $group: {
+          _id: null,
+          totalExpenses: { $sum: '$amount' },
+          averageExpense: { $avg: '$amount' },
+          count: { $sum: 1 },
+          minAmount: { $min: '$amount' },
+          maxAmount: { $max: '$amount' }
+        }
+      }
+    ];
+
+    const stats = await db.collection('expenses').aggregate(pipeline).toArray();
+
+    res.json({
+      success: true,
+      data: { stats: stats[0] || {} }
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const db = getDB();
@@ -104,7 +176,7 @@ router.post('/', validate(expenseSchemas.create), async (req, res) => {
     const db = getDB();
     const expenseData = {
       ...req.body,
-      userId: req?.user?._id ?? "",
+      userId: req.user._id.toString(),
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -194,78 +266,6 @@ router.delete('/:id', async (req, res) => {
       message: 'Expense deleted successfully'
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
-
-// Get expenses by month
-router.get('/month/:year/:month', async (req, res) => {
-  try {
-    const db = getDB();
-    const { year, month } = req.params;
-
-    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-    const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
-    console.log("startData",startDate);
-    console.log("endDate",endDate);
-    const expenses = await db.collection('expenses')
-      .find({
-        userId: req.user._id.toString(),
-        date: { $gte: startDate, $lte: endDate }
-      })
-      .sort({ date: -1 })
-      .toArray();
-
-    res.json({
-      success: true,
-      data: { expenses }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
-
-// Get expense statistics
-router.get('/stats/summary', async (req, res) => {
-  try {
-    const db = getDB();
-    const { startDate, endDate } = req.query;
-
-    const filter = { userId: req.user._id.toString() };
-    if (startDate) filter.date = { $gte: new Date(startDate) };
-    if (endDate) {
-      filter.date = filter.date || {};
-      filter.date.$lte = new Date(endDate);
-    }
-
-    const pipeline = [
-      { $match: filter },
-      {
-        $group: {
-          _id: null,
-          totalExpenses: { $sum: '$amount' },
-          averageExpense: { $avg: '$amount' },
-          count: { $sum: 1 },
-          minAmount: { $min: '$amount' },
-          maxAmount: { $max: '$amount' }
-        }
-      }
-    ];
-
-    const stats = await db.collection('expenses').aggregate(pipeline).toArray();
-
-    res.json({
-      success: true,
-      data: { stats: stats[0] || {} }
-    });
-  } catch (error) {
-    console.log(error);
     res.status(500).json({
       success: false,
       message: 'Server error'

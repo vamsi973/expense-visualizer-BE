@@ -4,6 +4,7 @@ const validate = (schema) => {
   return (req, res, next) => {
     const { error } = schema.validate(req.body);
     if (error) {
+      console.log(error,89);
       return res.status(400).json({
         success: false,
         message: error.details[0].message
@@ -149,6 +150,60 @@ const paymentMethodSchemas = {
   })
 };
 
+const budgetSchemas = {
+  create: Joi.object({
+    name: Joi.string().required().min(1).max(100),
+    amount: Joi.number().positive().required(),
+    currency: Joi.string().default('USD'),
+    period: Joi.string().valid('daily', 'weekly', 'monthly', 'yearly').default('monthly'),
+    startDate: Joi.date().default(Date.now),
+    endDate: Joi.date().allow(null),
+    categories: Joi.array().items(
+      Joi.object({
+        categoryId: Joi.string().required(),
+        categoryName: Joi.string().required(),
+        allocatedAmount: Joi.number().min(0).required(),
+        spentAmount: Joi.number().min(0).required(),
+        color: Joi.string().required(),
+        icon: Joi.string().required()
+      })
+    ).min(1).required(),
+    isActive: Joi.boolean().default(true),
+    notifications: Joi.object({
+      alertThreshold: Joi.number().min(0).max(100).default(80),
+      alertEnabled: Joi.boolean().default(true),
+      dailyUpdates: Joi.boolean().default(false),
+      weeklyReports: Joi.boolean().default(true)
+    }).default({
+      alertThreshold: 80,
+      alertEnabled: true,
+      dailyUpdates: false,
+      weeklyReports: true
+    }),
+    description: Joi.string().allow('', null),
+    tags: Joi.array().items(Joi.string())
+  }),
+
+  update: Joi.object({
+    name: Joi.string().min(1).max(100),
+    amount: Joi.number().positive(),
+    currency: Joi.string(),
+    period: Joi.string().valid('daily', 'weekly', 'monthly', 'yearly'),
+    startDate: Joi.date(),
+    endDate: Joi.date().allow(null),
+    categories: Joi.array().items(Joi.string()),
+    isActive: Joi.boolean(),
+    notifications: Joi.object({
+      alertThreshold: Joi.number().min(0).max(100),
+      alertEnabled: Joi.boolean(),
+      dailyUpdates: Joi.boolean(),
+      weeklyReports: Joi.boolean()
+    }),
+    description: Joi.string().allow('', null),
+    tags: Joi.array().items(Joi.string())
+  })
+};
+
 module.exports = {
   validate,
   authSchemas,
@@ -156,5 +211,6 @@ module.exports = {
   userSchemas,
   sharedExpenseSchemas,
   categorySchemas,
-  paymentMethodSchemas
+  paymentMethodSchemas,
+  budgetSchemas
 }; 
