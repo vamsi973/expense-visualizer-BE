@@ -15,6 +15,8 @@ const categoryRoutes = require('./routes/categories');
 const paymentMethodRoutes = require('./routes/payment-methods');
 const budgetRoutes = require('./routes/budgets');
 const uploadRoutes = require('./routes/uploads');
+const settingRoutes = require('./routes/settings');
+const dataManagementRoutes = require('./routes/data-management');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -77,6 +79,8 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/payment-methods', paymentMethodRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/settings', settingRoutes);
+app.use('/api/data-management', dataManagementRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -79,7 +79,10 @@ router.put('/notifications', validate(userSchemas.updateNotifications), async (r
   try {
     const db = getDB();
     const updateData = {
-      'notifications': req.body,
+      'notifications': {
+        ...req.body,
+        updatedAt: new Date()
+      },
       updatedAt: new Date()
     };
 
@@ -88,11 +91,107 @@ router.put('/notifications', validate(userSchemas.updateNotifications), async (r
       { $set: updateData }
     );
 
+    // Get updated user to return current notification settings
+    const updatedUser = await db.collection('users').findOne({ _id: new ObjectId(req.user._id) });
+    const notifications = updatedUser.notifications || {};
+
     res.json({
       success: true,
-      message: 'Notification settings updated successfully'
+      message: 'Notification settings updated successfully',
+      data: notifications
     });
   } catch (error) {
+    console.error('Error updating notification settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Get notification settings
+router.get('/notifications', async (req, res) => {
+  try {
+    const db = getDB();
+    const user = await db.collection('users').findOne({ _id: new ObjectId(req.user._id) });
+    
+    const notifications = user.notifications || {
+      billReminders: true,
+      budgetAlerts: true,
+      sharedExpenses: true,
+      systemNotifications: true,
+      reminderTime: '09:00',
+      frequency: 'daily'
+    };
+
+    res.json({
+      success: true,
+      data: notifications
+    });
+  } catch (error) {
+    console.error('Error getting notification settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Delete account
+router.post('/delete-account', async (req, res) => {
+  try {
+    const db = getDB();
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required to delete account'
+      });
+    }
+
+    // Get user with password to verify
+    const user = await db.collection('users').findOne({ _id: new ObjectId(req.user._id) });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Verify password
+    const bcrypt = require('bcryptjs');
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid password'
+      });
+    }
+
+    // Delete user's expenses
+    await db.collection('expenses').deleteMany({ userId: req.user._id });
+    
+    // Delete user's budgets
+    await db.collection('budgets').deleteMany({ userId: req.user._id });
+    
+    // Delete user's categories
+    await db.collection('categories').deleteMany({ userId: req.user._id });
+    
+    // Delete user's payment methods
+    await db.collection('payment-methods').deleteMany({ userId: req.user._id });
+    
+    // Finally, delete the user
+    await db.collection('users').deleteOne({ _id: new ObjectId(req.user._id) });
+
+    res.json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting account:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
