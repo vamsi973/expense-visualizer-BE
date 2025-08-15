@@ -86,10 +86,11 @@ const expenseSchemas = {
 const userSchemas = {
   updateProfile: Joi.object({
     displayName: Joi.string().min(2).max(50),
-    photoURL: Joi.string().uri(),
+    photoURL: Joi.string().optional().uri().allow('', null),
     currency: Joi.string(),
     timezone: Joi.string(),
     language: Joi.string(),
+    email: Joi.string().email(), 
     theme: Joi.string().valid('light', 'dark', 'auto')
   }),
 

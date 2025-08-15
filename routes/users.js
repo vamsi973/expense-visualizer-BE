@@ -40,6 +40,7 @@ router.put('/profile', validate(userSchemas.updateProfile), async (req, res) => 
       data: { user: updatedUser }
     });
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       success: false,
       message: 'Server error'
